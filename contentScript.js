@@ -1,10 +1,8 @@
 // @ts-check
 "use strict";
-let audioCtx = new AudioContext();
 
-function _browser() {
-  return typeof browser !== "undefined" ? browser : chrome;
-}
+const browserApi = typeof browser !== "undefined" ? browser : chrome;
+let audioCtx = new AudioContext();
 
 async function connect(element, filters) {
   element.crossOrigin = "anonymous";
@@ -15,11 +13,16 @@ async function connect(element, filters) {
   const filterNodes = [];
   for (const filter of filters) {
     if (filters["disabled"]) continue;
-    let filterType = "peaking";
-    if (filters["type"] === "LSQ") {
+
+    let filterType = "";
+    if (filter["type"] === "PK") {
+      filterType = "peaking";
+    } else if (filter["type"] === "LSQ") {
       filterType = "lowshelf";
     } else if (filters["type"] === "HSQ") {
       filterType = "highshelf";
+    } else {
+      continue;
     }
 
     const filterNode = new BiquadFilterNode(audioCtx, {
@@ -41,10 +44,8 @@ async function connect(element, filters) {
 
 const mediaObserver = new MutationObserver(function (mutations) {
   mutations.forEach(async function (mutation) {
-    const filtersStorage = _browser().storage.local.get("filters");
+    const filtersStorage = browserApi.storage.local.get("filters");
     mutation.addedNodes.forEach(function (node) {
-      // get type of node
-      console.log(node);
       if (node.tagName === "AUDIO" || node.tagName === "VIDEO") {
         connect(node, filtersStorage.filters);
       }
@@ -53,19 +54,16 @@ const mediaObserver = new MutationObserver(function (mutations) {
 });
 
 document.addEventListener("DOMContentLoaded", async function () {
-  if (document.getElementsByClassName("graphtool")) {
-    return injectScript();
-  }
+  if (document.getElementsByClassName("graphtool")) return injectScript();
 
-  const filtersStorage = await _browser().storage.local.get("filters");
+  const filtersStorage = await browserApi.storage.local.get("filters");
   for (const el of document.querySelectorAll("audio,video")) {
     await connect(el, filtersStorage.filters);
   }
 
   // Observe for video and audio elements DOM changes
   const targetNode = document.documentElement;
-  const config = { childList: true, subtree: true };
-  mediaObserver.observe(targetNode, config);
+  mediaObserver.observe(targetNode, { childList: true, subtree: true });
 });
 
 function injectScript() {
@@ -81,12 +79,12 @@ function injectScript() {
 // Listen to UpdateExtensionFilters message
 window.addEventListener("message", function (event) {
   if (event.data.type === "UpdateExtensionFilters") {
-    _browser().storage.local.set({ filters: event.data.filters });
+    browserApi.storage.local.set({ filters: event.data.filters });
   }
 });
 
 // Observe changes to the filters storage
-_browser().storage.onChanged.addListener(async function (changes, namespace) {
+browserApi.storage.onChanged.addListener(async function (changes, namespace) {
   if (namespace === "local" && "filters" in changes) {
     audioCtx.close();
     audioCtx = new AudioContext();
