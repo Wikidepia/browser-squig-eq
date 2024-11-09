@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "InBrowser Squig EQ",
+  "version": "3",
+  "description": "Apply EQ created from squig.link to your browser",
+  "homepage_url": "https://github.com/Wikidepia/browser-squig-eq",
+  "icons": {
+    "96": "ico.svg"
+  },
+  "optional_permissions": ["<all_urls>", "activeTab"],
+  "permissions": ["storage", "activeTab"],
+  "action": {
+    "default_icon": "ico.svg",
+    "default_title": "InBrowser Squig EQ",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*", "file:///*"],
+      "js": ["contentScript.js"],
+      "all_frames": true,
+      "match_about_blank": true
+    }
+  ]
+}
