@@ -4,7 +4,7 @@
 const browserApi = typeof browser !== "undefined" ? browser : chrome;
 let audioCtx = new AudioContext();
 
-async function connect(element, filters) {
+function connect(element, filters) {
   element.crossOrigin = "anonymous";
   const source = new MediaElementAudioSourceNode(audioCtx, {
     mediaElement: element,
@@ -33,7 +33,11 @@ async function connect(element, filters) {
     });
     filterNodes.push(filterNode);
   }
-  if (filterNodes.length === 0) return;
+
+  if (filterNodes.length === 0) {
+    source.connect(audioCtx.destination);
+    return;
+  }
 
   let connect = source.connect(filterNodes[0]);
   for (let i = 1; i < filterNodes.length; i++) {
@@ -44,7 +48,7 @@ async function connect(element, filters) {
 
 const mediaObserver = new MutationObserver(function (mutations) {
   mutations.forEach(async function (mutation) {
-    const filtersStorage = browserApi.storage.local.get("filters");
+    const filtersStorage = await browserApi.storage.local.get("filters");
     mutation.addedNodes.forEach(function (node) {
       if (node.tagName === "AUDIO" || node.tagName === "VIDEO") {
         connect(node, filtersStorage.filters);
@@ -53,18 +57,24 @@ const mediaObserver = new MutationObserver(function (mutations) {
   });
 });
 
-document.addEventListener("DOMContentLoaded", async function () {
-  if (document.getElementsByClassName("graphtool")) return injectScript();
+async function init(isEnable) {
+  if (document.getElementsByClassName("graphtool").length > 0)
+    return injectScript();
 
-  const filtersStorage = await browserApi.storage.local.get("filters");
+  audioCtx = new AudioContext();
+  let filtersStorage = { filters: [] };
+  if (isEnable) {
+    filtersStorage = await browserApi.storage.local.get("filters");
+  }
+
   for (const el of document.querySelectorAll("audio,video")) {
-    await connect(el, filtersStorage.filters);
+    connect(el, filtersStorage.filters);
   }
 
   // Observe for video and audio elements DOM changes
   const targetNode = document.documentElement;
   mediaObserver.observe(targetNode, { childList: true, subtree: true });
-});
+}
 
 function injectScript() {
   const scriptElement = document.createElement("script");
@@ -77,21 +87,24 @@ function injectScript() {
 }
 
 // Listen to UpdateExtensionFilters message
+let oldFilters = "";
 window.addEventListener("message", function (event) {
-  if (event.data.type === "UpdateExtensionFilters") {
+  if (event.data.type === "UpdateExtensionFilters" && oldFilters !== JSON.stringify(event.data.filters)) {
     browserApi.storage.local.set({ filters: event.data.filters });
+    oldFilters = JSON.stringify(event.data.filters);
   }
 });
 
 // Observe changes to the filters storage
 browserApi.storage.onChanged.addListener(async function (changes, namespace) {
+  if (document.getElementsByClassName("graphtool").length > 0) return;
   if (namespace === "local" && "filters" in changes) {
     audioCtx.close();
-    audioCtx = new AudioContext();
-
-    const filters = changes.filters.newValue;
-    for (const el of document.querySelectorAll("audio,video")) {
-      await connect(el, filters);
-    }
+    await init(true);
+  } else if (namespace === "local" && "enabled" in changes) {
+    audioCtx.close();
+    await init(changes.enabled.newValue);
   }
 });
+
+init(true);
