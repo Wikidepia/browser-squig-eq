@@ -57,9 +57,11 @@ const mediaObserver = new MutationObserver(function (mutations) {
   });
 });
 
-async function init(isEnable) {
+async function init() {
   if (document.getElementsByClassName("graphtool").length > 0)
     return injectScript();
+  const isEnable = await browserApi.storage.local.get("enabled");
+  if (isEnable.enabled === false) return;
 
   audioCtx = new AudioContext();
   let filtersStorage = { filters: [] };
@@ -89,7 +91,10 @@ function injectScript() {
 // Listen to UpdateExtensionFilters message
 let oldFilters = "";
 window.addEventListener("message", function (event) {
-  if (event.data.type === "UpdateExtensionFilters" && oldFilters !== JSON.stringify(event.data.filters)) {
+  if (
+    event.data.type === "UpdateExtensionFilters" &&
+    oldFilters !== JSON.stringify(event.data.filters)
+  ) {
     browserApi.storage.local.set({ filters: event.data.filters });
     oldFilters = JSON.stringify(event.data.filters);
   }
@@ -100,11 +105,11 @@ browserApi.storage.onChanged.addListener(async function (changes, namespace) {
   if (document.getElementsByClassName("graphtool").length > 0) return;
   if (namespace === "local" && "filters" in changes) {
     audioCtx.close();
-    await init(true);
+    await init();
   } else if (namespace === "local" && "enabled" in changes) {
     audioCtx.close();
-    await init(changes.enabled.newValue);
+    await init();
   }
 });
 
-init(true);
+init();
