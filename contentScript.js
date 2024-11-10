@@ -51,7 +51,7 @@ const mediaObserver = new MutationObserver(function (mutations) {
     const filtersStorage = await browserApi.storage.local.get("filters");
     mutation.addedNodes.forEach(function (node) {
       if (node.tagName === "AUDIO" || node.tagName === "VIDEO") {
-        connect(node, filtersStorage.filters);
+        connect(node, filtersStorage.filters || []);
       }
     });
   });
@@ -68,7 +68,7 @@ async function init(isEnable) {
   }
 
   for (const el of document.querySelectorAll("audio,video")) {
-    connect(el, filtersStorage.filters);
+    connect(el, filtersStorage.filters || []);
   }
 
   // Observe for video and audio elements DOM changes
