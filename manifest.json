@@ -5,12 +5,12 @@
   "description": "Apply EQ created from squig.link to your browser",
   "homepage_url": "https://github.com/Wikidepia/browser-squig-eq",
   "icons": {
-    "96": "ico.svg"
+    "96": "icon.svg"
   },
   "optional_permissions": ["<all_urls>", "activeTab"],
   "permissions": ["storage", "activeTab"],
   "action": {
-    "default_icon": "ico.svg",
+    "default_icon": "icon.svg",
     "default_title": "InBrowser Squig EQ",
     "default_popup": "popup.html"
   },
