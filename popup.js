@@ -19,10 +19,10 @@ document.addEventListener("DOMContentLoaded", async function () {
     const td2 = document.createElement("td");
     const td3 = document.createElement("td");
     const td4 = document.createElement("td");
-    td1.innerText = filter.freq;
-    td2.innerText = filter.gain;
-    td3.innerText = filter.q;
-    td4.innerText = filter.type;
+    td1.innerText = filter.type;
+    td2.innerText = filter.freq;
+    td3.innerText = filter.gain;
+    td4.innerText = filter.q;
     tr.appendChild(td1);
     tr.appendChild(td2);
     tr.appendChild(td3);
