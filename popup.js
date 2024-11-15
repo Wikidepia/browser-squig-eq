@@ -1,8 +1,12 @@
+// @ts-check
+"use strict";
+
 const browserApi = typeof browser !== "undefined" ? browser : chrome;
 
 document.addEventListener("DOMContentLoaded", async function () {
   let cbox = document.getElementById("eq-cbox");
-  cbox.checked = (await browserApi.storage.local.get("enabled")).enabled || false
+  cbox.checked =
+    (await browserApi.storage.local.get("enabled")).enabled || false;
   cbox.addEventListener("change", async function () {
     await browserApi.storage.local.set({ enabled: cbox.checked });
   });
@@ -30,4 +34,41 @@ document.addEventListener("DOMContentLoaded", async function () {
     tbody.appendChild(tr);
   }
   eqFilters.appendChild(table);
+});
+
+var exportEq = document.getElementById("export-eq");
+exportEq.addEventListener("click", async function () {
+  const filters = (await browserApi.storage.local.get("filters")).filters || [];
+
+  let filterText = "Preamp: 0 dB";
+  for (let i = 0; i < filters.length; i++) {
+    filterText += `\nFilter ${i + 1}: `;
+
+    filterText += filters[i].disabled ? "OFF " : "ON ";
+    switch (filters[i].type) {
+      case "PK":
+        filterText += "PK ";
+        break;
+      case "LSQ":
+        filterText += "LSC ";
+        break;
+      case "HSQ":
+        filterText += "HSC ";
+        break;
+    }
+    filterText += `Fc ${filters[i].freq} Hz Gain ${filters[i].gain} dB Q ${filters[i].q}`;
+  }
+
+  var blob = new Blob([filterText], {
+    type: "text/plain;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "EQ-" + new Date().toISOString().replace(/:/g, "-") + ".txt";
+  a.click();
+
+  setTimeout(function () {
+    URL.revokeObjectURL(url);
+  }, 100);
 });
