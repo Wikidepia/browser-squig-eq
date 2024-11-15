@@ -5,6 +5,7 @@ const browserApi = typeof browser !== "undefined" ? browser : chrome;
 
 document.addEventListener("DOMContentLoaded", async function () {
   let cbox = document.getElementById("eq-cbox");
+  if (cbox === null) return;
   cbox.checked =
     (await browserApi.storage.local.get("enabled")).enabled || false;
   cbox.addEventListener("change", async function () {
@@ -33,7 +34,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     tr.appendChild(td4);
     tbody.appendChild(tr);
   }
-  eqFilters.appendChild(table);
+  if (filters.length != 0) eqFilters.appendChild(table);
 });
 
 var exportEq = document.getElementById("export-eq");
